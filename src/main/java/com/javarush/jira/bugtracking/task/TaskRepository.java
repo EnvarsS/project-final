@@ -38,11 +38,4 @@ public interface TaskRepository extends BaseRepository<Task> {
             """, nativeQuery = true)
     void setTaskAndSubTasksSprint(long taskId, Long sprintId);
 
-    @Modifying
-    @Query(value = """
-            UPDATE task
-            SET sprint_id =:sprintId
-            WHERE id =:taskId OR parent_id =:taskId
-            """, nativeQuery = true)
-    void setTaskAndSubTasksSprintH2(long taskId, Long sprintId);
 }
