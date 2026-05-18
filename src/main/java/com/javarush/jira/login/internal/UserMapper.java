@@ -13,7 +13,7 @@ import java.util.EnumSet;
 @Mapper(componentModel = "spring", imports = {EnumSet.class, Role.class})
 public interface UserMapper extends BaseMapper<User, UserTo> {
     @Override
-    @Mapping(target = "roles", expression = "java(EnumSet.of(Role.ADMIN))")
+    @Mapping(target = "roles", expression = "java(EnumSet.of(Role.DEV))")
     User toEntity(UserTo to);
 
     @Override
