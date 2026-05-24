@@ -18,6 +18,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  app:
+    build: .
+    container_name: jira-app
+    restart: always
+    env_file:
+      - .env
+    environment:
+      DB_URL: jdbc:postgresql://jira-db:5432/jira
+    volumes:
+      - app-logs:/app/logs
+      - app-attachments:/app/attachments
+      - app-resources:/app/resources
+    depends_on:
+      jira-db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: jira-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - app-resources:/opt/jirarush/resources:ro
+    depends_on:
+      - app
 
 volumes:
   jira-db-data:
+  app-logs:
+  app-attachments:
+  app-resources:
