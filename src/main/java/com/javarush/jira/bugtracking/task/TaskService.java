@@ -19,8 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 import static com.javarush.jira.bugtracking.ObjectType.TASK;
 import static com.javarush.jira.bugtracking.task.TaskUtil.fillExtraFields;
@@ -139,5 +141,36 @@ public class TaskService {
         if (!userType.equals(possibleUserType)) {
             throw new DataConflictException(String.format(assign ? CANNOT_ASSIGN : CANNOT_UN_ASSIGN, userType, task.getStatusCode()));
         }
+    }
+
+    public Long getTimeInProgress(long taskId) {
+        List<Activity> activities = activityHandler.getRepository()
+                .findAllByTaskIdOrderByUpdatedDesc(taskId);
+        LocalDateTime inProgressTime = findLatestStatusTime(activities, "in_progress");
+        LocalDateTime readyForReviewTime = findLatestStatusTime(activities, "ready_for_review");
+        if (inProgressTime == null || readyForReviewTime == null) {
+            return null;
+        }
+        return Duration.between(inProgressTime, readyForReviewTime).toMinutes();
+    }
+
+    public Long getTimeInTesting(long taskId) {
+        List<Activity> activities = activityHandler.getRepository()
+                .findAllByTaskIdOrderByUpdatedDesc(taskId);
+        LocalDateTime readyForReviewTime = findLatestStatusTime(activities, "ready_for_review");
+        LocalDateTime doneTime = findLatestStatusTime(activities, "done");
+        if (readyForReviewTime == null || doneTime == null) {
+            return null;
+        }
+        return Duration.between(readyForReviewTime, doneTime).toMinutes();
+    }
+
+    private LocalDateTime findLatestStatusTime(List<Activity> activities, String statusCode) {
+        return activities.stream()
+                .filter(a -> statusCode.equals(a.getStatusCode()))
+                .map(Activity::getUpdated)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }
